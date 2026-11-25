@@ -27,10 +27,10 @@ th{font-size:12px;font-weight:800;position:sticky;top:0;z-index:2;background:#12
 th:nth-child(1){width:34px}
 th:nth-child(2){width:30px}
 th:nth-child(4){width:66px}
-.pz{font-weight:800;color:#fff;background:#1a6fe8;font-size:13px}
-.lbl{font-size:14px;font-weight:800}
-.lbl.m{color:#1a6fe8;background:#eef5ff}
-.lbl.e{color:#8a5a12;background:#fff6ea}
+.pz{font-weight:900;color:#fff;background:#1a6fe8;font-size:15px}
+.lbl{font-size:15px;font-weight:900;border-radius:7px;padding:7px 0;line-height:1.1}
+.lbl.m{color:#0b4bd6;background:#dce9ff;border:2px solid #9fc2ff}
+.lbl.e{color:#a85a00;background:#ffe9cc;border:2px solid #ffc27a}
 .opts{display:flex;gap:3px;justify-content:center}
 .opt{flex:1;border:1.5px solid #dfe8f5;background:#fff;border-radius:7px;padding:18px 0;font-size:18px;font-weight:800;color:#9aa7ab;cursor:pointer;transition:.12s;line-height:1}
 .opt:active{transform:scale(.94)}
@@ -106,10 +106,13 @@ function switchDate(d){save();loadDate(d);writeHash();render();}
 function optsCell(r,t){
   var td=document.createElement('td');
   var wrap=document.createElement('div');wrap.className='opts';
+  var baseC = (t==='m') ? '#1a6fe8' : '#e8890c';
+  var lightC = (t==='m') ? '#dce9ff' : '#ffe9cc';
   OPTS.forEach(function(o){
     var b=document.createElement('button');
     b.className='opt';b.textContent=o.s;
-    if(r[t]===o.k){b.style.background=o.c;b.style.color='#fff';b.style.borderColor=o.c;}
+    if(r[t]===o.k){b.style.background=baseC;b.style.color='#fff';b.style.borderColor=baseC;}
+    else{b.style.color=baseC;b.style.borderColor=lightC;}
     b.onclick=function(){ r[t]=(r[t]===o.k?'':o.k); save(); render(); };
     wrap.appendChild(b);
   });
@@ -134,13 +137,13 @@ function dropCell(r,t){
 function render(){
   var tb=document.getElementById('tb');tb.innerHTML='';
   rows.forEach(function(r){
-    var tr1=document.createElement('tr');
+    var tr1=document.createElement('tr');tr1.className='mrow';
     var td0=document.createElement('td');td0.className='pz';td0.rowSpan=2;td0.textContent=r.id+'号';tr1.appendChild(td0);
     var l1=document.createElement('td');l1.className='lbl m';l1.textContent='早';tr1.appendChild(l1);
     tr1.appendChild(optsCell(r,'m'));
     tr1.appendChild(dropCell(r,'m'));
     tb.appendChild(tr1);
-    var tr2=document.createElement('tr');
+    var tr2=document.createElement('tr');tr2.className='erow';
     var l2=document.createElement('td');l2.className='lbl e';l2.textContent='晚';tr2.appendChild(l2);
     tr2.appendChild(optsCell(r,'e'));
     tr2.appendChild(dropCell(r,'e'));
