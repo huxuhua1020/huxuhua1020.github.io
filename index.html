@@ -175,22 +175,22 @@ function render(){
 }
 function addRow(){var maxId=0;rows.forEach(function(r){if(r.id>maxId)maxId=r.id;});rows.push({id:maxId+1,m:'',e:'',mD:0,eD:0});save();render();}
 function clearAll(){if(!confirm('确定清空【'+curDate+'】的记录吗？（棚号保留）'))return;rows.forEach(function(r){r.m='';r.e='';r.mD=0;r.eD=0;});save();render();}
+function segText(label,val,drop){
+  var s=label+':';
+  if(val)s+=val;
+  if(drop>0)s+='(掉苗'+drop+'只)';
+  return s;
+}
 function buildText(mode){
   mode=mode||'all';
   var head='【料台查询记录】'+curDate;
   if(mode==='m')head+=' 早上';else if(mode==='e')head+=' 晚上';
   var out=head+'\n';var any=false;
   rows.forEach(function(r){
-    var mm=r.m||'—', ee=r.e||'—';
-    var mDrop=r.mD>0?'(掉苗'+r.mD+'只)':'';
-    var eDrop=r.eD>0?'(掉苗'+r.eD+'只)':'';
-    if(mode==='m'){
-      if(r.m||r.mD>0){any=true;out+=r.id+'号  早:'+mm+mDrop+'\n';}
-    }else if(mode==='e'){
-      if(r.e||r.eD>0){any=true;out+=r.id+'号  晚:'+ee+eDrop+'\n';}
-    }else{
-      if(r.m||r.e||r.mD>0||r.eD>0){any=true;out+=r.id+'号  早:'+mm+mDrop+'  晚:'+ee+eDrop+'\n';}
-    }
+    var parts=[];
+    if((mode==='m'||mode==='all') && (r.m||r.mD>0)) parts.push(segText('早',r.m,r.mD));
+    if((mode==='e'||mode==='all') && (r.e||r.eD>0)) parts.push(segText('晚',r.e,r.eD));
+    if(parts.length){any=true;out+=r.id+'号  '+parts.join('  ')+'\n';}
   });
   if(!any)out+='（暂无记录）\n';
   return out;
