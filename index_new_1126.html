@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>料台查询记录表</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a6fe8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="料台记录">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#eaf2ff 0%,#f7faff 100%);color:#1a2332;padding:8px;min-height:100vh}
+.card{background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(26,111,232,.12);padding:14px 8px;max-width:100%;margin:0 auto}
+h1{font-size:18px;margin:0 0 6px;color:#12335f}
+.datebar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.datebar label{font-size:13px;font-weight:800;color:#3a4a63;white-space:nowrap}
+.datebar input{flex:1;font-size:16px;font-weight:800;color:#1a6fe8;padding:9px 10px;border:2px solid #dfe8f5;border-radius:10px;background:#f8fbff;outline:none}
+.sub{font-size:12px;color:#8a97ab;margin-bottom:8px;line-height:1.6}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#5a6b85;margin-bottom:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+th,td{border:1px solid #e3ebf7;padding:5px 3px;text-align:center;vertical-align:middle}
+th{font-size:14px;font-weight:800;position:sticky;top:0;z-index:2;background:#12335f;color:#fff;padding:9px 3px}
+th:nth-child(1){width:38px}
+th:nth-child(3){width:70px}
+.pz{font-weight:900;color:#fff;background:#1a6fe8;font-size:15px;position:relative}
+tr.rowstart td.pz{border-top:2px solid #fff}
+.oc{position:relative;background:#eff5ff;padding:6px 4px}
+.oc.e{background:#fff8ec}
+.oc::before{content:attr(data-l);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:44px;font-weight:900;color:rgba(26,111,232,.80);pointer-events:none;letter-spacing:12px;line-height:1}
+.oc.e::before{color:rgba(232,137,12,.84)}
+tr.rowstart td{border-top:2px solid #1a6fe8}
+.opts{position:relative;z-index:1;display:flex;gap:3px;justify-content:center}
+.opt{flex:1;border:1.5px solid #dfe8f5;background:rgba(255,255,255,.82);border-radius:7px;padding:18px 0;font-size:18px;font-weight:800;color:#9aa7ab;cursor:pointer;transition:.12s;line-height:1}
+.opt:active{transform:scale(.94)}
+.opt.pending{animation:pulse .4s}
+.dbtn.pending{animation:pulse .4s}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(.86);box-shadow:0 0 0 2px #ff9f1c}100%{transform:scale(1)}}
+.droprow{display:flex;align-items:center;justify-content:center;border:1.5px solid #e9b3b8;background:#fff8f8;border-radius:7px;overflow:hidden;transition:.15s}
+.droprow.on{background:#e63946;border-color:#e63946}
+.dbtn{width:32%;border:none;background:transparent;color:#c0392b;font-size:17px;font-weight:900;padding:16px 0;cursor:pointer;line-height:1}
+.droprow.on .dbtn{color:#fff}
+.dbtn:active{background:rgba(0,0,0,.08)}
+.dval{flex:1;font-size:14px;font-weight:900;color:#c0392b;text-align:center}
+.droprow.on .dval{color:#fff}
+.tools{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.tools button{flex:1;min-width:100px;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer}
+#addBtn{background:#1a6fe8;color:#fff}
+#copyBtn{background:#22b573;color:#fff}
+#csvBtn{background:#8b5cf6;color:#fff}
+#clearBtn{background:#eef3fb;color:#5a6b85}
+.tip{font-size:11px;color:#9aa7ab;margin-top:12px;line-height:1.7}
+.toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(10px);background:rgba(34,181,115,.96);color:#fff;padding:10px 20px;border-radius:22px;font-size:14px;font-weight:800;opacity:0;transition:.25s;pointer-events:none;z-index:99;box-shadow:0 6px 20px rgba(34,181,115,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:200}
+.modal.show{display:flex}
+.mbox{background:#fff;width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:16px;display:flex;flex-direction:column;gap:10px}
+.mtitle{font-size:15px;font-weight:800;color:#12335f;text-align:center;margin-bottom:2px}
+.mbtn{border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:800;background:#eef5ff;color:#1a6fe8;cursor:pointer}
+.mbtn.cancel{background:#f2f4f7;color:#8a97ab}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>料台查询记录表</h1>
+<div class="datebar">
+<label>记录日期</label>
+<input type="date" id="dateSel">
+</div>
+<div class="sub">1~53 号棚 · 每棚上排早（蓝）、下排晚（橙） · 掉苗加减号在最后 · 防丢自动保存</div>
+<div class="legend">
+<span><i style="background:#8b5cf6"></i>微＝微量</span>
+<span><i style="background:#3a8bff"></i>少＝少量</span>
+<span><i style="background:#ff9f1c"></i>中＝中量</span>
+<span><i style="background:#e63946"></i>大＝大量</span>
+<span><i style="background:#c0392b;border-radius:50%"></i>掉苗＝加减号</span>
+</div>
+<table>
+<thead><tr><th>棚号</th><th>料台量</th><th>掉苗</th></tr></thead>
+<tbody id="tb"></tbody>
+</table>
+<div class="tools">
+<button id="copyBtn" onclick="copyText()">复制记录（发微信）</button>
+<button id="csvBtn" onclick="exportCSV()">下载表格（Excel）</button>
+<button id="addBtn" onclick="addRow()">＋ 添加棚</button>
+<button id="clearBtn" onclick="clearAll()">清空</button>
+</div>
+<div class="tip">提示：每棚上排是「早」（蓝）、下排是「晚」（橙），背景大字可分辨；点「微/少/中/大」标记，最后一列掉苗用 − / + 加减，大于 0 变红。切后台/锁屏回来不会丢。</div>
+</div>
+<div class="toast" id="toast">✓ 已自动保存</div>
+
+<div class="modal" id="modal">
+  <div class="mbox">
+    <div class="mtitle">复制哪一段记录？</div>
+    <button class="mbtn" onclick="doCopy('m')">只导早上</button>
+    <button class="mbtn" onclick="doCopy('e')">只导晚上</button>
+    <button class="mbtn" onclick="doCopy('all')">早晚全部</button>
+    <button class="mbtn cancel" onclick="closeModal()">取消</button>
+  </div>
+</div>
+
+<script>
+var OPTS=[
+ {k:'微量',s:'微'},
+ {k:'少量',s:'少'},
+ {k:'中量',s:'中'},
+ {k:'大量',s:'大'}
+];
+var DBKEY='***';
+var DB={};
+try{DB=JSON.parse(localStorage.getItem(DBKEY))||{};}catch(e){DB={};}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
+var curDate=todayStr();
+var rows=null;
+var toastTimer=null;
+var clickMap={};
+function isDouble(key){var now=Date.now();if(clickMap[key]&&now-clickMap[key]<420){clickMap[key]=0;return true;}clickMap[key]=now;return false;}
+function showSaved(){var t=document.getElementById('toast');t.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},1100);}
+function initRows(){var a=[];for(var i=1;i<=53;i++)a.push({id:i,m:'',e:'',mD:0,eD:0});return a;}
+function compact(rs){return rs.filter(function(r){return r.m||r.e||r.mD>0||r.eD>0;}).map(function(r){return [r.id,r.m||'',r.e||'',r.mD||0,r.eD||0];});}
+function expand(arr){var map={};arr.forEach(function(a){map[a[0]]={id:a[0],m:a[1]||'',e:a[2]||'',mD:a[3]||0,eD:a[4]||0};});var res=[];for(var i=1;i<=53;i++)res.push(map[i]||{id:i,m:'',e:'',mD:0,eD:0});return res;}
+function writeHash(){try{var h=encodeURIComponent(JSON.stringify({d:curDate,r:compact(rows)}));history.replaceState(null,'','#'+h);}catch(e){}}
+function save(){DB[curDate]=rows;try{localStorage.setItem(DBKEY,JSON.stringify(DB));}catch(e){}writeHash();showSaved();}
+function loadDate(d){curDate=d;rows=DB[curDate]||initRows();rows.forEach(function(r){if(r.mD===undefined)r.mD=0;if(r.eD===undefined)r.eD=0;});}
+function switchDate(d){save();loadDate(d);writeHash();render();}
+function optsCell(r,t){
+  var td=document.createElement('td');
+  td.className='oc'+(t==='e'?' e':'');
+  td.setAttribute('data-l', t==='m'?'早':'晚');
+  var wrap=document.createElement('div');wrap.className='opts';
+  var baseC=(t==='m')?'#1a6fe8':'#e8890c';
+  var lightC=(t==='m')?'#dce9ff':'#ffe9cc';
+  OPTS.forEach(function(o){
+    var b=document.createElement('button');
+    b.className='opt';b.textContent=o.s;
+    if(r[t]===o.k){b.style.background=baseC;b.style.color='#fff';b.style.borderColor=baseC;}
+    else{b.style.color=baseC;b.style.borderColor=lightC;}
+    b.onclick=function(){ if(isDouble('o'+r.id+t+o.k)){ r[t]=(r[t]===o.k?'':o.k); save(); render(); } else { b.classList.add('pending'); setTimeout(function(){b.classList.remove('pending');},420); } };
+    wrap.appendChild(b);
+  });
+  td.appendChild(wrap);
+  return td;
+}
+function dropCell(r,t){
+  var td=document.createElement('td');
+  var dk=t+'D';
+  var dr=document.createElement('div');dr.className='droprow';
+  var minus=document.createElement('button');minus.className='dbtn';minus.textContent='−';
+  var val=document.createElement('span');val.className='dval';val.textContent=String(r[dk]||0);
+  var plus=document.createElement('button');plus.className='dbtn';plus.textContent='+';
+  function upd(){ val.textContent=String(r[dk]||0); if(r[dk]>0){dr.classList.add('on');}else{dr.classList.remove('on');} }
+  minus.onclick=function(){ if(isDouble('dm'+r.id+t)){ if(r[dk]>0){r[dk]--;save();upd();} } else { minus.classList.add('pending'); setTimeout(function(){minus.classList.remove('pending');},420); } };
+  plus.onclick=function(){ if(isDouble('dp'+r.id+t)){ if(r[dk]<99){r[dk]++;save();upd();} } else { plus.classList.add('pending'); setTimeout(function(){plus.classList.remove('pending');},420); } };
+  dr.appendChild(minus);dr.appendChild(val);dr.appendChild(plus);
+  upd();
+  td.appendChild(dr);
+  return td;
+}
+function render(){
+  var tb=document.getElementById('tb');tb.innerHTML='';
+  rows.forEach(function(r){
+    var tr1=document.createElement('tr');tr1.className='rowstart';
+    var td0=document.createElement('td');td0.className='pz';td0.rowSpan=2;td0.textContent=r.id+'号';tr1.appendChild(td0);
+    tr1.appendChild(optsCell(r,'m'));
+    tr1.appendChild(dropCell(r,'m'));
+    tb.appendChild(tr1);
+    var tr2=document.createElement('tr');
+    tr2.appendChild(optsCell(r,'e'));
+    tr2.appendChild(dropCell(r,'e'));
+    tb.appendChild(tr2);
+  });
+}
+function addRow(){var maxId=0;rows.forEach(function(r){if(r.id>maxId)maxId=r.id;});rows.push({id:maxId+1,m:'',e:'',mD:0,eD:0});save();render();}
+function clearAll(){if(!confirm('确定清空【'+curDate+'】的记录吗？（棚号保留）'))return;rows.forEach(function(r){r.m='';r.e='';r.mD=0;r.eD=0;});save();render();}
+function buildText(mode){
+  mode=mode||'all';
+  var head='【料台查询记录】'+curDate;
+  if(mode==='m')head+=' 早上';else if(mode==='e')head+=' 晚上';
+  var out=head+'\n';var any=false;
+  rows.forEach(function(r){
+    var mm=r.m||'—', ee=r.e||'—';
+    var mDrop=r.mD>0?'(掉苗'+r.mD+'只)':'';
+    var eDrop=r.eD>0?'(掉苗'+r.eD+'只)':'';
+    if(mode==='m'){
+      if(r.m||r.mD>0){any=true;out+=r.id+'号  早:'+mm+mDrop+'\n';}
+    }else if(mode==='e'){
+      if(r.e||r.eD>0){any=true;out+=r.id+'号  晚:'+ee+eDrop+'\n';}
+    }else{
+      if(r.m||r.e||r.mD>0||r.eD>0){any=true;out+=r.id+'号  早:'+mm+mDrop+'  晚:'+ee+eDrop+'\n';}
+    }
+  });
+  if(!any)out+='（暂无记录）\n';
+  return out;
+}
+function copyText(){document.getElementById('modal').classList.add('show');}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function doCopy(mode){closeModal();var txt=buildText(mode);
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){alert('已复制，去微信粘贴发送即可');}).catch(function(){fallbackCopy(txt);});}else{fallbackCopy(txt);}}
+function fallbackCopy(txt){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');alert('已复制，去微信粘贴发送即可');}catch(e){prompt('请长按全选复制：',txt);}document.body.removeChild(ta);}
+function exportCSV(){
+  var lines=['日期,棚号,早,早掉苗数,晚,晚掉苗数'];
+  rows.forEach(function(r){lines.push(curDate+','+r.id+','+(r.m||'')+','+(r.mD>0?r.mD:'')+','+(r.e||'')+','+(r.eD>0?r.eD:'')+'');});
+  var blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='料台查询记录_'+curDate+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+}
+(function init(){
+  var restored=false;
+  if(location.hash&&location.hash.length>1){
+    try{
+      var o=JSON.parse(decodeURIComponent(location.hash.slice(1)));
+      if(o&&o.d&&o.r){ curDate=o.d; rows=expand(o.r); DB[curDate]=rows; try{localStorage.setItem(DBKEY,JSON.stringify(DB));}catch(e){} restored=true; }
+    }catch(e){}
+  }
+  if(!restored){ loadDate(curDate); }
+  document.getElementById('dateSel').value=curDate;
+  document.getElementById('dateSel').addEventListener('change',function(){switchDate(this.value||todayStr());});
+  render();
+})();
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+</script>
+</body>
+</html>
