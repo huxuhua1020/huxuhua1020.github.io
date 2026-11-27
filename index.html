@@ -117,6 +117,8 @@ var curDate=todayStr();
 var rows=null;
 var toastTimer=null;
 var clickMap={};
+function isLockedDate(){return curDate!==todayStr();}
+function showLocked(){var t=document.getElementById('toast');t.textContent='🔒 超24小时，已锁定只读';t.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},1400);}
 function isDouble(key){var now=Date.now();if(clickMap[key]&&now-clickMap[key]<420){clickMap[key]=0;return true;}clickMap[key]=now;return false;}
 function showSaved(){var t=document.getElementById('toast');t.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show');},1100);}
 function initRows(){var a=[];for(var i=1;i<=53;i++)a.push({id:i,m:'',e:'',mD:0,eD:0});return a;}
@@ -138,7 +140,7 @@ function optsCell(r,t){
     b.className='opt';b.textContent=o.s;
     if(r[t]===o.k){b.style.background=baseC;b.style.color='#fff';b.style.borderColor=baseC;}
     else{b.style.color=baseC;b.style.borderColor=lightC;}
-    b.onclick=function(){ if(isDouble('o'+r.id+t+o.k)){ r[t]=(r[t]===o.k?'':o.k); save(); render(); } else { b.classList.add('pending'); setTimeout(function(){b.classList.remove('pending');},420); } };
+    b.onclick=function(){ if(isLockedDate()){showLocked();return;} if(isDouble('o'+r.id+t+o.k)){ r[t]=(r[t]===o.k?'':o.k); save(); render(); } else { b.classList.add('pending'); setTimeout(function(){b.classList.remove('pending');},420); } };
     wrap.appendChild(b);
   });
   td.appendChild(wrap);
@@ -152,14 +154,16 @@ function dropCell(r,t){
   var val=document.createElement('span');val.className='dval';val.textContent=String(r[dk]||0);
   var plus=document.createElement('button');plus.className='dbtn';plus.textContent='+';
   function upd(){ val.textContent=String(r[dk]||0); if(r[dk]>0){dr.classList.add('on');}else{dr.classList.remove('on');} }
-  minus.onclick=function(){ if(isDouble('dm'+r.id+t)){ if(r[dk]>0){r[dk]--;save();upd();} } else { minus.classList.add('pending'); setTimeout(function(){minus.classList.remove('pending');},420); } };
-  plus.onclick=function(){ if(isDouble('dp'+r.id+t)){ if(r[dk]<99){r[dk]++;save();upd();} } else { plus.classList.add('pending'); setTimeout(function(){plus.classList.remove('pending');},420); } };
+  minus.onclick=function(){ if(isLockedDate()){showLocked();return;} if(isDouble('dm'+r.id+t)){ if(r[dk]>0){r[dk]--;save();upd();} } else { minus.classList.add('pending'); setTimeout(function(){minus.classList.remove('pending');},420); } };
+  plus.onclick=function(){ if(isLockedDate()){showLocked();return;} if(isDouble('dp'+r.id+t)){ if(r[dk]<99){r[dk]++;save();upd();} } else { plus.classList.add('pending'); setTimeout(function(){plus.classList.remove('pending');},420); } };
   dr.appendChild(minus);dr.appendChild(val);dr.appendChild(plus);
   upd();
   td.appendChild(dr);
   return td;
 }
 function render(){
+  var sub=document.querySelector('.sub');
+  if(sub)sub.innerHTML=isLockedDate()?'<b style="color:#d9482b">🔒 超过24小时，已锁定：只能查看、复制、导出，不能修改</b>':'1~53 号棚 · 每棚上排早（蓝）、下排晚（橙） · 掉苗加减号在最后 · 防丢自动保存';
   var tb=document.getElementById('tb');tb.innerHTML='';
   rows.forEach(function(r){
     var tr1=document.createElement('tr');tr1.className='rowstart';
@@ -173,8 +177,8 @@ function render(){
     tb.appendChild(tr2);
   });
 }
-function addRow(){var maxId=0;rows.forEach(function(r){if(r.id>maxId)maxId=r.id;});rows.push({id:maxId+1,m:'',e:'',mD:0,eD:0});save();render();}
-function clearAll(){if(!confirm('确定清空【'+curDate+'】的记录吗？（棚号保留）'))return;rows.forEach(function(r){r.m='';r.e='';r.mD=0;r.eD=0;});save();render();}
+function addRow(){if(isLockedDate()){showLocked();return;}var maxId=0;rows.forEach(function(r){if(r.id>maxId)maxId=r.id;});rows.push({id:maxId+1,m:'',e:'',mD:0,eD:0});save();render();}
+function clearAll(){if(isLockedDate()){showLocked();return;}if(!confirm('确定清空【'+curDate+'】的记录吗？（棚号保留）'))return;rows.forEach(function(r){r.m='';r.e='';r.mD=0;r.eD=0;});save();render();}
 function segText(label,val,drop){
   var s=label+':';
   if(val)s+=val;
