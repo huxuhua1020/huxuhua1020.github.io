@@ -8,13 +8,17 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#eaf2ff 0%,#f7faff 100%);color:#1a2332;padding:10px;min-height:100vh}
 .card{background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(26,111,232,.12);padding:14px 10px;max-width:520px;margin:0 auto}
-h1{font-size:18px;margin:0 0 4px;color:#12335f}
-.dateline{font-size:13px;color:#8a97a8;font-weight:700;margin:0 0 10px}
+h1{font-size:18px;margin:0 0 8px;color:#12335f}
+.datebar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.datebar label{font-size:13px;font-weight:800;color:#3a4a63;white-space:nowrap}
+.datebar input{flex:1;font-size:16px;font-weight:800;color:#1a6fe8;padding:9px 10px;border:2px solid #dfe8f5;border-radius:10px;background:#f8fbff;outline:none}
+.sub{font-size:12px;color:#8a97a8;font-weight:700;margin:0 0 10px;line-height:1.5}
 .settings{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#f3f8ff;border:1px solid #dfe8f5;border-radius:12px;padding:10px;margin-bottom:12px;font-size:13px;font-weight:700;color:#3a4a63}
 .settings .fld{display:flex;align-items:center;gap:5px}
 .settings input,.settings select{width:64px;font-size:16px;font-weight:800;color:#1a6fe8;padding:7px 8px;border:2px solid #dfe8f5;border-radius:9px;background:#fff;outline:none;text-align:center}
 .settings select{width:auto}
 .settings input:focus{border-color:#1a6fe8}
+.settings input:disabled,.settings select:disabled{opacity:.6}
 table{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}
 th,td{border:1px solid #e3ebf7;padding:4px;text-align:center;vertical-align:middle}
 th{font-size:13px;font-weight:800;background:#12335f;color:#fff;padding:8px 4px;position:sticky;top:0;z-index:2}
@@ -22,12 +26,9 @@ th:nth-child(1){width:50px}
 th:nth-child(2){width:38%}
 th:nth-child(3){width:40%}
 .pz{font-weight:900;color:#fff;background:#1a6fe8;font-size:14px}
-.wrap{display:flex;gap:4px;align-items:center}
-.win{flex:1;min-width:0;font-size:17px;font-weight:800;color:#1a6fe8;padding:9px 4px;border:2px solid #dfe8f5;border-radius:9px;background:#f8fbff;outline:none;text-align:center}
+.win{width:100%;font-size:16px;font-weight:800;color:#1a6fe8;padding:9px 4px;border:2px solid #dfe8f5;border-radius:9px;background:#f8fbff;outline:none;text-align:center}
 .win:focus{border-color:#1a6fe8;background:#fff}
-.mic{flex:0 0 auto;width:38px;height:40px;border:2px solid #dfe8f5;background:#f3f8ff;border-radius:9px;font-size:17px;cursor:pointer;line-height:1}
-.mic:active{background:#dce9ff}
-.mic.rec{background:#e63946;border-color:#e63946}
+.win:read-only{background:#f2f4f8;color:#7c8798}
 .gap{font-size:22px;font-weight:900;color:#1f8a4c}
 .gap.over{color:#d9482b}
 .gap.empty{color:#c4cdda;font-size:15px;font-weight:700}
@@ -37,6 +38,7 @@ th:nth-child(3){width:40%}
 .tools button{flex:1;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer}
 #copyBtn{background:#22b573;color:#fff}
 #clearBtn{background:#eef3fb;color:#5a6b85}
+#clearBtn:disabled{opacity:.5}
 .note{font-size:11px;color:#9aa7ab;margin-top:12px;line-height:1.7}
 .note b{color:#5a6b85}
 .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(10px);background:rgba(34,181,115,.96);color:#fff;padding:10px 20px;border-radius:22px;font-size:14px;font-weight:800;opacity:0;transition:.25s;pointer-events:none;z-index:99}
@@ -46,7 +48,8 @@ th:nth-child(3){width:40%}
 <body>
 <div class="card">
 <h1>各棚投料间隔表</h1>
-<div class="dateline" id="dateline"></div>
+<div class="datebar"><label>日期</label><input type="date" id="dateSel"></div>
+<div class="sub" id="sub"></div>
 <div class="settings">
 <div class="fld">投料时间<input id="d" type="number" inputmode="decimal" value="1" step="0.5" min="0.5">秒</div>
 <div class="fld">工作时长<select id="T">
@@ -67,17 +70,30 @@ th:nth-child(3){width:40%}
 <button id="clearBtn" onclick="clearAll()">清空重量</button>
 </div>
 <div class="note">
-按 <b>43 克/秒（实测）</b> 算：间隔 = 工作时长秒数 ÷ 次数 − 投料时间。间隔<span style="color:#d9482b">红色</span>＝超过60秒上限。点 <b>🎤</b> 可直接说重量（如“三斤”“三点五”）。自动保存。
+按 <b>43 克/秒（实测）</b> 算：间隔 = 工作时长秒数 ÷ 次数 − 投料时间。间隔<span style="color:#d9482b">红色</span>＝超过60秒上限。每天自动保存，切日期可回查；超过24小时只读。
 </div>
 </div>
 <div class="toast" id="toast">✓ 已复制</div>
 
 <script>
 var RATE=43, N=53;
-var weights={};
-var STORE='feederTable_v1';
-function loadStore(){try{var o=JSON.parse(localStorage.getItem(STORE));if(o){weights=o.weights||{};if(o.d)document.getElementById('d').value=o.d;if(o.T)document.getElementById('T').value=o.T;}}catch(e){}}
-function saveStore(){try{localStorage.setItem(STORE,JSON.stringify({weights:weights,d:document.getElementById('d').value,T:document.getElementById('T').value}));}catch(e){}}
+var DBKEY='feederDB_v1';
+var DB={}, curDate='';
+function todayStr(){var n=new Date();function p(x){return x<10?'0'+x:x;}return n.getFullYear()+'-'+p(n.getMonth()+1)+'-'+p(n.getDate());}
+function loadDB(){try{DB=JSON.parse(localStorage.getItem(DBKEY)||'{}');}catch(e){DB={};}}
+function saveDB(){try{localStorage.setItem(DBKEY,JSON.stringify(DB));}catch(e){}}
+function getRec(){if(!DB[curDate])DB[curDate]={d:1,T:30,w:{}};return DB[curDate];}
+function isLocked(){return curDate!==todayStr();}
+function cn2num(str){
+  str=String(str).replace(/[斤公斤克\s，。]/g,'');
+  var m=str.match(/\d+(\.\d+)?/);
+  if(m) return parseFloat(m[0]);
+  var map={'零':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+  function pInt(t){if(!t)return 0;if(t==='十')return 10;if(t[0]==='十')return 10+(map[t[1]]||0);if(t.indexOf('十')>0){var a=t.split('十');return (map[a[0]]||0)*10+(a[1]?(map[a[1]]||0):0);}var v=0;for(var k=0;k<t.length;k++){if(map[t[k]]!=null)v=v*10+map[t[k]];}return v;}
+  var dot=str.split('点');
+  if(dot.length===2) return pInt(dot[0])+pInt(dot[1])/10;
+  return pInt(str);
+}
 function getD(){var v=parseFloat(document.getElementById('d').value);return v>0?v:1;}
 function getT(){return parseInt(document.getElementById('T').value)||30;}
 function calcGap(w){
@@ -88,35 +104,45 @@ function calcGap(w){
   if(g<0) return {err:true};
   return {g:Math.round(g), over:g>60};
 }
+function switchDate(ds){
+  curDate=ds||todayStr();
+  var r=getRec();
+  document.getElementById('d').value=r.d;
+  document.getElementById('T').value=r.T;
+  document.getElementById('dateSel').value=curDate;
+  render();
+}
 function render(){
-  var tb=document.getElementById('tb');
-  tb.innerHTML='';
+  var locked=isLocked();
+  var sub=document.getElementById('sub');
+  sub.innerHTML=locked?'<b style="color:#d9482b">🔒 超过24小时，已锁定：只能查看、复制，不能修改</b>':'今天：自动保存，可修改';
+  var r=getRec();
+  document.getElementById('d').disabled=locked;
+  document.getElementById('T').disabled=locked;
+  document.getElementById('clearBtn').disabled=locked;
+  var tb=document.getElementById('tb');tb.innerHTML='';
   for(var i=1;i<=N;i++){
     if(i===29)continue;
     var tr=document.createElement('tr');
     var td0=document.createElement('td');td0.className='pz';td0.textContent=i+'号';tr.appendChild(td0);
-    var td1=document.createElement('td');
-    var wrap=document.createElement('div');wrap.className='wrap';
-    var inp=document.createElement('input');inp.className='win';inp.type='text';inp.inputMode='decimal';inp.placeholder='斤';
-    inp.value=weights[i]!=null?weights[i]:'';
-    inp.dataset.id=i;
-    inp.addEventListener('input',function(){weights[this.dataset.id]=this.value;updateGap(this.dataset.id);saveStore();updateTotal();});
-    inp.addEventListener('blur',function(){var raw=this.value;if(/[零一二两三四五六七八九十点]/.test(raw)){var n=cn2num(raw);if(n!=null&&!isNaN(n)&&n>0){this.value=n;weights[this.dataset.id]=n;updateGap(this.dataset.id);saveStore();updateTotal();}}});
-    wrap.appendChild(inp);
-    td1.appendChild(wrap);
     var td2=document.createElement('td');
     var sp=document.createElement('span');sp.className='gap empty';sp.id='g'+i;sp.textContent='—';
     td2.appendChild(sp);tr.appendChild(td2);
-    tr.appendChild(td1);
+    var td1=document.createElement('td');
+    var inp=document.createElement('input');inp.className='win';inp.type='text';inp.inputMode='decimal';inp.placeholder='斤';
+    inp.value=r.w[i]!=null?r.w[i]:'';inp.dataset.id=i;
+    if(locked)inp.readOnly=true;
+    inp.addEventListener('input',function(){if(isLocked())return;var rr=getRec();rr.w[this.dataset.id]=this.value;saveDB();updateGap(this.dataset.id);updateTotal();});
+    inp.addEventListener('blur',function(){var raw=this.value;if(/[零一二两三四五六七八九十点]/.test(raw)){var n=cn2num(raw);if(n!=null&&!isNaN(n)&&n>0){this.value=n;if(!isLocked()){var rr=getRec();rr.w[this.dataset.id]=n;saveDB();}updateGap(this.dataset.id);updateTotal();}}});
+    td1.appendChild(inp);tr.appendChild(td1);
     tb.appendChild(tr);
     updateGap(i);
   }
   updateTotal();
 }
 function updateGap(id){
-  var sp=document.getElementById('g'+id);
-  if(!sp)return;
-  var w=cn2num(weights[id]);
+  var sp=document.getElementById('g'+id);if(!sp)return;
+  var w=cn2num(getRec().w[id]);
   var r=calcGap(w);
   if(!r){sp.className='gap empty';sp.textContent='—';return;}
   if(r.err){sp.className='gap over';sp.textContent='投不完';return;}
@@ -124,81 +150,32 @@ function updateGap(id){
   sp.textContent=r.g+' 秒'+(r.over?' ⚠':'');
 }
 function updateTotal(){
-  var sum=0;
-  for(var i=1;i<=N;i++){var w=cn2num(weights[i]);if(w>0)sum+=w;}
+  var sum=0,r=getRec();
+  for(var i=1;i<=N;i++){if(i===29)continue;var w=cn2num(r.w[i]);if(w>0)sum+=w;}
   document.getElementById('total').textContent=sum.toFixed(2)+' 斤（'+Math.round(sum*500)+' 克）';
 }
-/* 语音识别 */
-function cn2num(str){
-  str=String(str).replace(/[斤公斤克\s，。]/g,'');
-  var m=str.match(/\d+(\.\d+)?/);
-  if(m) return parseFloat(m[0]);
-  var map={'零':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
-  function pInt(t){
-    if(!t)return 0;
-    if(t==='十')return 10;
-    if(t[0]==='十')return 10+(map[t[1]]||0);
-    if(t.indexOf('十')>0){var a=t.split('十');return (map[a[0]]||0)*10+(a[1]?(map[a[1]]||0):0);}
-    var v=0;for(var k=0;k<t.length;k++){if(map[t[k]]!=null)v=v*10+map[t[k]];}
-    return v;
-  }
-  var dot=str.split('点');
-  if(dot.length===2) return pInt(dot[0])+pInt(dot[1])/10;
-  return pInt(str);
-}
-function voiceInput(id,btn){
-  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){alert('这个浏览器不支持语音按钮，可以点输入框用输入法的🎤语音键说“三斤”');return;}
-  try{
-    var rec=new SR();rec.lang='zh-CN';rec.interimResults=false;rec.maxAlternatives=1;
-    btn.classList.add('rec');btn.textContent='…';
-    rec.onresult=function(e){
-      var t=e.results[0][0].transcript;
-      var v=cn2num(t);
-      btn.classList.remove('rec');btn.textContent='🎤';
-      if(v!=null&&!isNaN(v)&&v>0){
-        weights[id]=v;
-        var el=document.querySelector('.win[data-id="'+id+'"]');if(el)el.value=v;
-        updateGap(id);saveStore();updateTotal();
-      }else{alert('没听清：'+t+'，请再说一次（比如“三斤”）');}
-    };
-    rec.onerror=function(){btn.classList.remove('rec');btn.textContent='🎤';alert('语音识别失败，可试试点输入框用输入法语音键');};
-    rec.onend=function(){btn.classList.remove('rec');btn.textContent='🎤';};
-    rec.start();
-  }catch(e){btn.classList.remove('rec');btn.textContent='🎤';alert('语音启动失败，可用输入法语音键');}
-}
 function copyAll(){
-  var d=getD(), T=getT();
-  var lines=['各棚投料间隔（'+document.getElementById('dateline').textContent+'｜投'+d+'秒 / '+T+'分钟）'];
-  for(var i=1;i<=N;i++){
-    var w=cn2num(weights[i]);
-    if(!w)continue;
-    var r=calcGap(w);
-    var g=r&&!r.err?r.g+'秒':'投不完';
-    if(r&&r.over)g+='(超60)';
-    lines.push(i+'号  '+g+'（'+w+'斤）');
-  }
+  var d=getD(), T=getT(), r=getRec();
+  var lines=['各棚投料间隔（'+curDate+'｜投'+d+'秒 / '+T+'分钟）'];
+  for(var i=1;i<=N;i++){if(i===29)continue;var w=cn2num(r.w[i]);if(!w)continue;var g=calcGap(w);var gs=g&&!g.err?g.g+'秒':'投不完';if(g&&g.over)gs+='(超60)';lines.push(i+'号  '+gs+'（'+w+'斤）');}
   var txt=lines.join('\n');
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){showToast();}).catch(function(){fb(txt);});}else{fb(txt);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){showTxt('✓ 已复制');}).catch(function(){fb(txt);});}else{fb(txt);}
 }
-function fb(txt){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast();}catch(e){prompt('长按复制：',txt);}document.body.removeChild(ta);}
-function showToast(){var t=document.getElementById('toast');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1200);}
+function fb(txt){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showTxt('✓ 已复制');}catch(e){prompt('长按复制：',txt);}document.body.removeChild(ta);}
+function showTxt(s){var t=document.getElementById('toast');t.textContent=s;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1200);}
 var clearArmed=false,clearTimer=null;
 function clearAll(){
+  if(isLocked()){showTxt('🔒 超24小时，已锁定');return;}
   var btn=document.getElementById('clearBtn');
-  if(!clearArmed){
-    clearArmed=true;btn.textContent='再点一次确认清空';btn.style.background='#f7c9bd';
-    clearTimer=setTimeout(function(){clearArmed=false;btn.textContent='清空重量';btn.style.background='';},3000);
-    return;
-  }
+  if(!clearArmed){clearArmed=true;btn.textContent='再点一次确认清空';btn.style.background='#f7c9bd';clearTimer=setTimeout(function(){clearArmed=false;btn.textContent='清空重量';btn.style.background='';},3000);return;}
   clearTimeout(clearTimer);clearArmed=false;btn.textContent='清空重量';btn.style.background='';
-  weights={};document.querySelectorAll('.win').forEach(function(x){x.value='';});for(var i=1;i<=N;i++)updateGap(i);updateTotal();saveStore();
+  getRec().w={};saveDB();render();
 }
-document.getElementById('d').addEventListener('input',function(){for(var i=1;i<=N;i++)updateGap(i);saveStore();});
-document.getElementById('T').addEventListener('change',function(){for(var i=1;i<=N;i++)updateGap(i);saveStore();});
-loadStore();
-render();
-(function(){var n=new Date();function p(x){return x<10?'0'+x:x;}var wk=['日','一','二','三','四','五','六'][n.getDay()];document.getElementById('dateline').textContent=n.getFullYear()+'年'+(n.getMonth()+1)+'月'+n.getDate()+'日 星期'+wk+' '+p(n.getHours())+':'+p(n.getMinutes());})();
+document.getElementById('d').addEventListener('input',function(){if(isLocked())return;getRec().d=getD();saveDB();for(var i=1;i<=N;i++)updateGap(i);});
+document.getElementById('T').addEventListener('change',function(){if(isLocked())return;getRec().T=getT();saveDB();for(var i=1;i<=N;i++)updateGap(i);});
+document.getElementById('dateSel').addEventListener('change',function(){switchDate(this.value||todayStr());});
+loadDB();
+switchDate(todayStr());
 </script>
 </body>
 </html>
