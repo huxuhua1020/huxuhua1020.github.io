@@ -41,6 +41,15 @@ th:nth-child(3){width:40%}
 #clearBtn:disabled{opacity:.5}
 .note{font-size:11px;color:#9aa7ab;margin-top:12px;line-height:1.7}
 .note b{color:#5a6b85}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:200}
+.modal.show{display:flex}
+.mbox{background:#fff;width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:16px;display:flex;flex-direction:column;gap:10px}
+.mtitle{font-size:15px;font-weight:800;color:#12335f;text-align:center}
+.mbtn{border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:800;background:#eef5ff;color:#1a6fe8;cursor:pointer}
+.mbtn.cancel{background:#f2f4f7;color:#8a97ab}
+.rtarea{width:100%;height:130px;border:2px solid #dfe8f5;border-radius:10px;padding:8px;font-size:12px;font-family:monospace;resize:vertical;outline:none}
+#backupBtn{background:#f5a623;color:#fff}
+#restoreBtn{background:#8b5cf6;color:#fff}
 .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(10px);background:rgba(34,181,115,.96);color:#fff;padding:10px 20px;border-radius:22px;font-size:14px;font-weight:800;opacity:0;transition:.25s;pointer-events:none;z-index:99}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -67,6 +76,8 @@ th:nth-child(3){width:40%}
 <div class="total"><span class="tk">合计重量</span><span id="total">0.00 斤</span></div>
 <div class="tools">
 <button id="copyBtn" onclick="copyAll()">复制整张表</button>
+<button id="backupBtn" onclick="backupAll()">备份</button>
+<button id="restoreBtn" onclick="openRestore()">恢复</button>
 <button id="clearBtn" onclick="clearAll()">清空重量</button>
 </div>
 <div class="note">
@@ -74,6 +85,14 @@ th:nth-child(3){width:40%}
 </div>
 </div>
 <div class="toast" id="toast">✓ 已复制</div>
+<div class="modal" id="restoreModal">
+  <div class="mbox">
+    <div class="mtitle">粘贴备份数据恢复</div>
+    <textarea class="rtarea" id="restoreTa" placeholder="把备份的那段文字粘贴到这里，再点恢复"></textarea>
+    <button class="mbtn" onclick="doRestore()">恢复</button>
+    <button class="mbtn cancel" onclick="closeRestore()">取消</button>
+  </div>
+</div>
 
 <script>
 var RATE=43, N=53;
@@ -153,6 +172,26 @@ function updateTotal(){
   var sum=0,r=getRec();
   for(var i=1;i<=N;i++){if(i===29)continue;var w=cn2num(r.w[i]);if(w>0)sum+=w;}
   document.getElementById('total').textContent=sum.toFixed(2)+' 斤（'+Math.round(sum*500)+' 克）';
+}
+function backupAll(){
+  saveDB();
+  var txt=JSON.stringify(DB);
+  try{navigator.clipboard.writeText(txt);}catch(e){}
+  try{var blob=new Blob([txt],{type:'text/plain;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='投料备份_'+todayStr()+'.txt';document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){}
+  showTxt('✓ 已备份（复制+下载）');
+}
+function openRestore(){document.getElementById('restoreTa').value='';document.getElementById('restoreModal').classList.add('show');}
+function closeRestore(){document.getElementById('restoreModal').classList.remove('show');}
+function doRestore(){
+  var txt=document.getElementById('restoreTa').value.trim();
+  if(!txt){alert('请先粘贴备份内容');return;}
+  try{
+    var o=JSON.parse(txt);
+    if(typeof o!=='object')throw 0;
+    for(var k in o){DB[k]=o[k];}
+    saveDB();closeRestore();switchDate(curDate);
+    alert('恢复成功！共'+Object.keys(o).length+'天记录');
+  }catch(e){alert('内容格式不对，请检查是否完整复制了备份文字');}
 }
 function copyAll(){
   var d=getD(), T=getT(), r=getRec();
